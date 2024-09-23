@@ -54,26 +54,109 @@ const state = {
   cart: []
 };
 
-const store = document.querySelector('store--item-list')
+function render() {}
+render();
 
-state.items.forEach((item) => {
-  const li = document.createElement("li")
-  const div = document.createElement("div")
-  const img = document.createElement("img")
-  const button = document.createElement("button")
+const storeList = document.querySelector(".store--item-list");
+const cartList = document.querySelector(".cart--item-list");
 
-  img.src = 'assets/icons/' + item.id + '.svg'
-  img.alt = item.name
-  button.innerText("Add to cart")
+function handleItemClick(storeItem) {
+  //added item clicked to cart array?
+  const itemExists = state.cart.find((item) => item.id == storeItem.id)
+  if (itemExists) {
+    itemExists.quantity++
+  } else {
+    const cartItem = { ...storeItem, quantity: 1 }
+    state.cart.push(cartItem)
+  }
 
-  div.appendChild(img)
-  li.appendChild(div)
-  li.appendChild(button)
-  store.appendChild(li)
-  /* <li>
-  <div class="store--item-icon">
-    <img src="assets/icons/001-beetroot.svg" alt="beetroot" />
-  </div>
-  <button>Add to cart</button>
-</li> */
-})
+  renderCart();
+}
+
+function handleCartItemClick(cartItem, increaseItemQuantity) {
+  //added item clicked to cart array?
+  if (increaseItemQuantity) {
+    cartItem.quantity++
+  } else {
+    cartItem.quantity--
+    if (cartItem.quantity <= 0) {
+      state.cart.pop((item) => item.id === cartItem.id)
+    }
+  }
+
+  renderCart();
+}
+
+function renderItems() {
+  state.items.map((item) => {
+    let li = renderItem(item);
+    storeList.appendChild(li);
+  });
+}
+
+function renderCart() {
+  //iterate through state.cart.map  and update the cart view
+  state.cart.map((item) => {
+    let li = renderCartItem(item);
+    cartList.appendChild(li);
+  });
+}
+
+function renderCartItem(cartItem) {
+  const li = document.createElement("li");
+  const img = document.createElement("img");
+
+  img.setAttribute("class", "cart--item-icon")
+  img.setAttribute("src", `./assets/icons/${cartItem.id}.svg`);
+  img.setAttribute("alt", cartItem.name);
+
+  const p = document.createElement("p");
+  p.innerText(cartItem.name)
+
+  const buttonRemove = document.createElement("button");
+  buttonRemove.setAttribute("class", "quantity-btn remove-btn center")
+  buttonRemove.addEventListener("click", () => {
+    handleCartItemClick(cartItem, false);
+  });
+
+  const span = document.createElement("span")
+  span.setAttribute("class", "quantity-text center")
+  span.innerText(cartItem.quantity)
+
+  const buttonAdd = document.createElement("button");
+  buttonAdd.setAttribute("class", "quantity-btn add-btn center")
+  buttonAdd.addEventListener("click", () => {
+    handleCartItemClick(cartItem, true);
+  });
+
+  li.appendChild(img)
+  li.appendChild(p)
+  li.appendChild(buttonRemove)
+  li.appendChild(span)
+  li.appendChild(buttonAdd)
+
+  return li;
+}
+function renderItem(storeItem) {
+  const li = document.createElement("li");
+  const div = document.createElement("div");
+  div.setAttribute("class", "store--item-icon");
+  const img = document.createElement("img");
+  img.setAttribute("src", `./assets/icons/${storeItem.id}.svg`);
+  img.setAttribute("alt", storeItem.name);
+
+  const button = document.createElement("button");
+  button.innerText = "Add to cart";
+  button.addEventListener("click", () => {
+    handleItemClick(storeItem);
+  });
+
+  div.appendChild(img);
+
+  li.appendChild(div);
+  li.appendChild(button);
+
+  return li;
+}
+
+renderItems();

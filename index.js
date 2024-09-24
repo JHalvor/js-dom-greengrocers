@@ -21,7 +21,7 @@ const state = {
     {
       id: "004-apricot",
       name: "apricot",
-      price: 0.35,
+      price: 0.25,
       type: "fruit"
     },
     {
@@ -39,7 +39,7 @@ const state = {
     {
       id: "007-bell-pepper",
       name: "bell pepper",
-      price: 0.35,
+      price: 0.55,
       type: "vegetable"
     },
     {
@@ -51,7 +51,7 @@ const state = {
     {
       id: "009-blueberry",
       name: "blueberry",
-      price: 0.35,
+      price: 0.45,
       type: "fruit"
     },
     {
@@ -62,7 +62,8 @@ const state = {
     }
   ],
   cart: [],
-  selectedFilteredType: "None"
+  selectedFilteredType: "None",
+  selectedSortingOrderType: "None"
 };
 
 function render() {}
@@ -71,7 +72,10 @@ render();
 const storeList = document.querySelector(".store--item-list");
 const cartList = document.querySelector(".cart--item-list");
 const totalNumber = document.querySelector(".total-number");
-const filters = document.querySelector(".btn-group");
+const filters = document.querySelector(".filter-buttons");
+const sorts = document.querySelector(".sort-buttons");
+const addProductButton = document.getElementById("add-product-button");
+let formExists = false;
 
 function handleItemClick(storeItem) {
   //added item clicked to cart array?
@@ -106,10 +110,15 @@ function handleFilterClick(type) {
   renderItems();
 }
 
+function handleSortClick(type) {
+  state.selectedSortingOrderType = type
+  renderItems();
+}
+
 function renderItems() {
   storeList.innerHTML = ``
-  console.log(state.selectedFilteredType)
-  state.items.map((item) => {
+  const sortedItems = sortItems(state.items)
+  sortedItems.map((item) => {
     if (state.selectedFilteredType === "None" || state.selectedFilteredType === item.type) {
       let li = renderItem(item);
       storeList.appendChild(li);
@@ -117,6 +126,31 @@ function renderItems() {
   });
   renderTotal();
 }
+
+function sortItems(items) {
+  if (state.selectedSortingOrderType === "None") {
+    return items
+  }
+  for (let x = 0; x < items.length; x++) {
+    for (let y = 1; y < items.length; y++) {
+      if (state.selectedSortingOrderType === "Price") {
+        if (items[y-1].price > items[y].price) {
+          const tmp = items[y]
+          items[y] = items[y-1]
+          items[y-1] = tmp
+        }
+      } else if (state.selectedSortingOrderType === "Alphabetically") {
+        if (items[y-1].name.toLowerCase() > items[y].name.toLowerCase()) {
+          const tmp = items[y]
+          items[y] = items[y-1]
+          items[y-1] = tmp
+        }
+      }
+    }
+  }
+  return items
+}
+
 
 function renderCart() {
   cartList.innerHTML = ``
@@ -219,5 +253,121 @@ function renderFilterButton(type) {
   filters.appendChild(button)
 }
 
+function renderSortButtons() {
+  sorts.innerHTML = ``
+  sorts.textContent = "Sort"
+
+  renderSortButton("None")
+  renderSortButton("Alphabetically")
+  renderSortButton("Price")
+}
+
+function renderSortButton(type) {
+  const button = document.createElement("button")
+  button.innerText = type;
+  button.addEventListener("click", () => {
+    handleSortClick(type);
+  });
+  sorts.appendChild(button)
+}
+
+function createProductForm() {
+  // Create the form element
+  const form = document.createElement("form");
+  form.id = "add-product-form";
+  
+  // Create product name input
+  const nameLabel = document.createElement("label");
+  nameLabel.setAttribute("for", "product-name");
+  nameLabel.innerText = "Product Name:";
+  form.appendChild(nameLabel);
+
+  const nameInput = document.createElement("input");
+  nameInput.type = "text";
+  nameInput.id = "product-name";
+  nameInput.required = true;
+  form.appendChild(nameInput);
+
+  // Create product price input
+  const priceLabel = document.createElement("label");
+  priceLabel.setAttribute("for", "product-price");
+  priceLabel.innerText = "Price:";
+  form.appendChild(priceLabel);
+
+  const priceInput = document.createElement("input");
+  priceInput.type = "number";
+  priceInput.id = "product-price";
+  priceInput.step = "0.01";
+  priceInput.required = true;
+  form.appendChild(priceInput);
+
+  // Create product type select
+  const typeLabel = document.createElement("label");
+  typeLabel.setAttribute("for", "product-type");
+  typeLabel.innerText = "Type:";
+  form.appendChild(typeLabel);
+
+  const typeSelect = document.createElement("select");
+  typeSelect.id = "product-type";
+  typeSelect.required = true;
+
+  const fruitOption = document.createElement("option");
+  fruitOption.value = "fruit";
+  fruitOption.innerText = "Fruit";
+  typeSelect.appendChild(fruitOption);
+
+  const vegetableOption = document.createElement("option");
+  vegetableOption.value = "vegetable";
+  vegetableOption.innerText = "Vegetable";
+  typeSelect.appendChild(vegetableOption);
+
+  form.appendChild(typeSelect);
+
+  // Create submit button
+  const submitButton = document.createElement("button");
+  submitButton.type = "submit";
+  submitButton.innerText = "Add Product";
+  form.appendChild(submitButton);
+
+  // Insert form into the document
+  addProductButton.insertAdjacentElement('afterend', form);
+
+  // Add event listener to handle form submission
+  form.addEventListener("submit", handleFormSubmit);
+}
+
+function handleFormSubmit(e) {
+  e.preventDefault();
+
+  const productName = document.getElementById("product-name").value;
+  const productPrice = parseFloat(document.getElementById("product-price").value);
+  const productType = document.getElementById("product-type").value;
+
+  if (productName && productPrice && productType) {
+    const newProduct = {
+      id: `${state.items.length + 1}-${productName.toLowerCase().replace(/\s/g, "-")}`,
+      name: productName,
+      price: productPrice,
+      type: productType
+    };
+
+    state.items.push(newProduct);
+
+    document.getElementById("product-name").value = "";
+    document.getElementById("product-price").value = "";
+    document.getElementById("product-type").value = "fruit";
+
+    renderItems();
+  }
+}
+
+addProductButton.addEventListener("click", () => {
+  if (!formExists) {
+    createProductForm();
+    formExists = true;
+  }
+});
+
 renderItems();
 renderFilterButtons();
+renderSortButtons();
